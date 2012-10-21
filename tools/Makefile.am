@@ -1,4 +1,4 @@
-AM_CFLAGS = -I./include -I../include
+AM_CFLAGS = $(libusb_CFLAGS) -I./include -I../include
 AM_LDFLAGS = -lreadline
 
 bin_PROGRAMS = irecovery

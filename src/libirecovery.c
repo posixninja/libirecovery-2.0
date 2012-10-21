@@ -24,10 +24,11 @@
 #include <unistd.h>
 
 #ifndef _WIN32
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #ifdef __APPLE__
-#include <IOKit/usb/IOUSBLib.h>
-#include <libusb-1.0/os/darwin_usb.h>
+//#include <IOKit/usb/IOUSBLib.h>
+//#include <libusb-1.0/os/darwin_usb.h>
+#include <libusb.h>
 #endif
 #else
 #define WIN32_LEAN_AND_MEAN
@@ -226,8 +227,9 @@ int irecv_control_transfer( irecv_client_t client,
 							uint16_t wLength,
 							unsigned int timeout) {
 #ifndef _WIN32
-#ifndef __APPLE__
+//#ifndef __APPLE__
 	return libusb_control_transfer(client->handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
+/*
 #else
 	if (timeout <= 10) {
 		// pod2g: dirty hack for limera1n support.
@@ -250,6 +252,7 @@ int irecv_control_transfer( irecv_client_t client,
 		return libusb_control_transfer(client->handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
 	}
 #endif
+*/
 #else
 	DWORD count = 0;
 	DWORD ret;
