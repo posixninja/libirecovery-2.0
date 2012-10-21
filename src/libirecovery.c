@@ -252,6 +252,7 @@ int irecv_control_transfer( irecv_client_t client,
 		return libusb_control_transfer(client->handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
 	}
 #endif
+
 */
 #else
 	DWORD count = 0;

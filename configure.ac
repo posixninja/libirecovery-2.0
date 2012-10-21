@@ -18,4 +18,15 @@ AC_CONFIG_MACRO_DIR([m4])
 PKG_CHECK_MODULES(libusb, libusb-1.0 >= 1.0.8)
 
 AC_CONFIG_FILES(Makefile src/Makefile include/Makefile tools/Makefile libirecovery-2.0.pc)
+
+case "$host_os" 
+  in darwin*)
+    IOKIT_LIBS="-framework IOKit"
+  ;;
+  *)
+    IOKIT_LIBS=
+  ;;
+esac
+AC_SUBST(IOKIT_LIBS)
+
 AC_OUTPUT
