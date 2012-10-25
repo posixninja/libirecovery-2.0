@@ -1,21 +1,21 @@
 /**
-  * GreenPois0n iRecovery - irecovery.c
-  * Copyright (C) 2010-2011 Chronic-Dev Team
-  * Copyright (C) 2010-2011 Joshua Hill
-  * Copyright (C) 2008-2011 Nicolas Haunold
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * GreenPois0n iRecovery - irecovery.c
+ * Copyright (C) 2010-2011 Chronic-Dev Team
+ * Copyright (C) 2010-2011 Joshua Hill
+ * Copyright (C) 2008-2011 Nicolas Haunold
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
 #include <stdio.h>
@@ -30,10 +30,17 @@
 #define debug(...) if(verbose) fprintf(stderr, __VA_ARGS__)
 
 enum {
-	kResetDevice, kStartShell, kSendCommand, kSendFile, kSendExploit, kSendScript
+	kResetDevice,
+	kStartShell,
+	kSendCommand,
+	kSendFile,
+	kSendExploit,
+	kSendScript,
+	kShowMode
 };
 
 static unsigned int quit = 0;
+static unsigned int quiet = 0;
 static unsigned int verbose = 0;
 
 void print_progress_bar(double progress);
@@ -41,6 +48,10 @@ int received_cb(irecv_client_t client, const irecv_event_t* event);
 int progress_cb(irecv_client_t client, const irecv_event_t* event);
 int precommand_cb(irecv_client_t client, const irecv_event_t* event);
 int postcommand_cb(irecv_client_t client, const irecv_event_t* event);
+
+void print_mode() {
+
+}
 
 void shell_usage() {
 	printf("Usage:\n");
@@ -51,7 +62,8 @@ void shell_usage() {
 	printf("\t/exit\t\tExit interactive shell.\n");
 }
 
-void parse_command(irecv_client_t client, unsigned char* command, unsigned int size) {
+void parse_command(irecv_client_t client, unsigned char* command,
+		unsigned int size) {
 	char* cmd = strdup(command);
 	char* action = strtok(cmd, " ");
 	debug("Executing %s\n", action);
@@ -66,7 +78,7 @@ void parse_command(irecv_client_t client, unsigned char* command, unsigned int s
 	if (!strcmp(cmd, "/upload")) {
 		char* filename = strtok(NULL, " ");
 		debug("Uploading files %s\n", filename);
-		if (filename != NULL) {
+		if (filename != NULL ) {
 			irecv_send_file(client, filename, 0);
 		}
 	} else
@@ -78,27 +90,27 @@ void parse_command(irecv_client_t client, unsigned char* command, unsigned int s
 		unsigned char srnm[12], imei[15], bt[15];
 
 		ret = irecv_get_cpid(client, &cpid);
-		if(ret == IRECV_E_SUCCESS) {
+		if (ret == IRECV_E_SUCCESS) {
 			printf("CPID: %d\n", cpid);
 		}
 
 		ret = irecv_get_bdid(client, &bdid);
-		if(ret == IRECV_E_SUCCESS) {
+		if (ret == IRECV_E_SUCCESS) {
 			printf("BDID: %d\n", bdid);
 		}
 
 		ret = irecv_get_ecid(client, &ecid);
-		if(ret == IRECV_E_SUCCESS) {
+		if (ret == IRECV_E_SUCCESS) {
 			printf("ECID: %lld\n", ecid);
 		}
 
 		ret = irecv_get_srnm(client, srnm);
-		if(ret == IRECV_E_SUCCESS) {
+		if (ret == IRECV_E_SUCCESS) {
 			printf("SRNM: %s\n", srnm);
 		}
 
 		ret = irecv_get_imei(client, imei);
-		if(ret == IRECV_E_SUCCESS) {
+		if (ret == IRECV_E_SUCCESS) {
 			printf("IMEI: %s\n", imei);
 		}
 	} else
@@ -106,20 +118,19 @@ void parse_command(irecv_client_t client, unsigned char* command, unsigned int s
 	if (!strcmp(cmd, "/exploit")) {
 		char* filename = strtok(NULL, " ");
 		debug("Sending exploit %s\n", filename);
-		if (filename != NULL) {
+		if (filename != NULL ) {
 			irecv_send_file(client, filename, 0);
 		}
 		irecv_send_exploit(client);
 	} else
 
-		if (!strcmp(cmd, "/execute")) {
-			char* filename = strtok(NULL, " ");
-			debug("Executing script %s\n", filename);
-			if (filename != NULL) {
-				irecv_execute_script(client, filename);
-			}
+	if (!strcmp(cmd, "/execute")) {
+		char* filename = strtok(NULL, " ");
+		debug("Executing script %s\n", filename);
+		if (filename != NULL ) {
+			irecv_execute_script(client, filename);
 		}
-
+	}
 
 	free(action);
 }
@@ -136,10 +147,10 @@ void append_command_to_history(char* cmd) {
 void init_shell(irecv_client_t client) {
 	irecv_error_t error = 0;
 	load_command_history();
-	irecv_event_subscribe(client, IRECV_PROGRESS, &progress_cb, NULL);
-	irecv_event_subscribe(client, IRECV_RECEIVED, &received_cb, NULL);
-	irecv_event_subscribe(client, IRECV_PRECOMMAND, &precommand_cb, NULL);
-	irecv_event_subscribe(client, IRECV_POSTCOMMAND, &postcommand_cb, NULL);
+	irecv_event_subscribe(client, IRECV_PROGRESS, &progress_cb, NULL );
+	irecv_event_subscribe(client, IRECV_RECEIVED, &received_cb, NULL );
+	irecv_event_subscribe(client, IRECV_PRECOMMAND, &precommand_cb, NULL );
+	irecv_event_subscribe(client, IRECV_POSTCOMMAND, &postcommand_cb, NULL );
 	while (!quit) {
 		error = irecv_receive(client);
 
@@ -211,7 +222,8 @@ int postcommand_cb(irecv_client_t client, const irecv_event_t* event) {
 		}
 	}
 
-	if (command) free(command);
+	if (command)
+		free(command);
 	return 0;
 }
 
@@ -224,27 +236,29 @@ int progress_cb(irecv_client_t client, const irecv_event_t* event) {
 
 void print_progress_bar(double progress) {
 	int i = 0;
-	if(progress < 0) {
+	if (progress < 0) {
 		return;
 	}
 
-	if(progress > 100) {
+	if (progress > 100) {
 		progress = 100;
 	}
 
-	printf("\r[");
-	for(i = 0; i < 50; i++) {
-		if(i < progress / 2) {
-			printf("=");
-		} else {
-			printf(" ");
+	if (!quiet) {
+		printf("\r[");
+		for (i = 0; i < 50; i++) {
+			if (i < progress / 2) {
+				printf("=");
+			} else {
+				printf(" ");
+			}
 		}
-	}
 
-	printf("] %3.1f%%", progress);
-	fflush(stdout);
-	if(progress == 100) {
-		printf("\n");
+		printf("] %3.1f%%", progress);
+		fflush(stdout);
+		if (progress == 100) {
+			printf("\n");
+		}
 	}
 }
 
@@ -252,6 +266,7 @@ void print_usage() {
 	printf("iRecovery - iDevice Recovery Utility\n");
 	printf("Usage: ./irecovery [args]\n");
 	printf("\t-v\t\tStart irecovery in verbose mode.\n");
+	printf("\t-m\t\tPrint the devices current mode.\n");
 	printf("\t-c <cmd>\tSend command to client.\n");
 	printf("\t-f <file>\tSend file to client.\n");
 	printf("\t-k [payload]\tSend usb exploit to client.\n");
@@ -268,8 +283,9 @@ int main(int argc, char* argv[]) {
 	int action = 0;
 	char* argument = NULL;
 	irecv_error_t error = 0;
-	if (argc == 1) print_usage();
-	while ((opt = getopt(argc, argv, "vhrsc:f:e:k::")) > 0) {
+	if (argc == 1)
+		print_usage();
+	while ((opt = getopt(argc, argv, "vqhrsmc:f:e:k::")) > 0) {
 		switch (opt) {
 		case 'v':
 			verbose += 1;
@@ -277,6 +293,14 @@ int main(int argc, char* argv[]) {
 
 		case 'h':
 			print_usage();
+			break;
+
+		case 'q':
+			quiet = 1;
+			break;
+
+		case 'm':
+			action = kShowMode;
 			break;
 
 		case 'r':
@@ -313,7 +337,8 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if (verbose) irecv_set_debug_level(verbose);
+	if (verbose)
+		irecv_set_debug_level(verbose);
 
 	irecv_init();
 	irecv_client_t client = NULL;
@@ -326,6 +351,9 @@ int main(int argc, char* argv[]) {
 			break;
 
 		if (i == 5) {
+			if (action == kShowMode) {
+				printf("No Device\n");
+			}
 			return -1;
 		}
 	}
@@ -336,7 +364,7 @@ int main(int argc, char* argv[]) {
 		break;
 
 	case kSendFile:
-		irecv_event_subscribe(client, IRECV_PROGRESS, &progress_cb, NULL);
+		irecv_event_subscribe(client, IRECV_PROGRESS, &progress_cb, NULL );
 		error = irecv_send_file(client, argument, 1);
 		debug("%s\n", irecv_strerror(error));
 		break;
@@ -347,8 +375,8 @@ int main(int argc, char* argv[]) {
 		break;
 
 	case kSendExploit:
-		if (argument != NULL) {
-			irecv_event_subscribe(client, IRECV_PROGRESS, &progress_cb, NULL);
+		if (argument != NULL ) {
+			irecv_event_subscribe(client, IRECV_PROGRESS, &progress_cb, NULL );
 			error = irecv_send_file(client, argument, 0);
 			if (error != IRECV_E_SUCCESS) {
 				debug("%s\n", irecv_strerror(error));
@@ -365,8 +393,27 @@ int main(int argc, char* argv[]) {
 
 	case kSendScript:
 		error = irecv_execute_script(client, argument);
-		if(error != IRECV_E_SUCCESS) {
+		if (error != IRECV_E_SUCCESS) {
 			debug("%s\n", irecv_strerror(error));
+		}
+		break;
+
+	case kShowMode:
+		switch (client->mode) {
+		case kRecoveryMode1:
+		case kRecoveryMode2:
+		case kRecoveryMode3:
+		case kRecoveryMode4:
+			printf("Recovery Mode\n");
+			break;
+
+		case kDfuMode:
+			printf("DFU Mode\n");
+			break;
+
+		default:
+			printf("Unknown Mode\n");
+			break;
 		}
 		break;
 
